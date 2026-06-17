@@ -4,7 +4,8 @@
     Desktop + Start-Menu shortcuts. Leaves your scripts and config untouched.
 #>
 $ErrorActionPreference = 'Stop'
-$repo = Split-Path -Parent $MyInvocation.MyCommand.Path
+# This script lives in scripts/; the repo root we removed from PATH is one level up.
+$repo = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 
 Write-Host "Uninstalling multideck shortcuts/PATH for $repo" -ForegroundColor Cyan
 

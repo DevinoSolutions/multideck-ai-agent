@@ -5,7 +5,9 @@
     User-scoped only - no admin required, fully reversible with uninstall.ps1.
 #>
 $ErrorActionPreference = 'Stop'
-$repo = Split-Path -Parent $MyInvocation.MyCommand.Path
+# This script lives in scripts/; the repo root - the folder we add to PATH and that
+# holds the .bat launchers the shortcuts point at - is one level up.
+$repo = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 
 Write-Host "Installing multideck from $repo" -ForegroundColor Cyan
 

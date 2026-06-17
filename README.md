@@ -51,7 +51,7 @@ git clone https://github.com/DevinoSolutions/multideck-ai-agent.git
 cd multideck-ai-agent
 ```
 
-**Option A — run from anywhere (recommended):** double-click **`install.bat`** (or run `.\install.ps1`). It adds the folder to your user PATH and drops **Desktop + Start-Menu shortcuts**, so you can type `multideck` in any terminal or double-click an icon. Reversible any time with `uninstall.bat`. *(Open a new terminal afterwards so PATH refreshes.)*
+**Option A — run from anywhere (recommended):** double-click **`install.bat`** (or run `.\scripts\install.ps1`). It adds the folder to your user PATH and drops **Desktop + Start-Menu shortcuts**, so you can type `multideck` in any terminal or double-click an icon. Reversible any time with `uninstall.bat`. *(Open a new terminal afterwards so PATH refreshes.)*
 
 **Option B — run in place:** skip the installer and just call `.\multideck.bat` from the repo folder.
 
@@ -137,7 +137,7 @@ Everything lives in `multideck.config.json` (generate it with `-Init`, or copy `
 
 | Key | Where | Default | Meaning |
 | --- | --- | --- | --- |
-| `baseDir` | top level | script folder | Root that **relative** project `path`s join onto. |
+| `baseDir` | top level | repo root | Root that **relative** project `path`s join onto. |
 | `layout.columns` / `layout.rows` | top level | `2` / `1` | Tiles per screen. `2×1` = halves; `2×2` = quadrants; `3×1` = thirds; `1×1` = maximized. |
 | `settings.defaultTool` | settings | `claude` | Tool for projects that don't set their own `tool`. |
 | `settings.settleSeconds` | settings | `3` | Seconds to wait after launching before tiling (only when something launched). |

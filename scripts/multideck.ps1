@@ -4,7 +4,8 @@
     any CLI agent) and auto-tile them into a grid across ALL your monitors.
 
 .DESCRIPTION
-    Reads multideck.config.json (next to this script, or pass -Config <path>). For each
+    Reads multideck.config.json (at the repo root beside the .bat launchers, or pass
+    -Config <path>). For each
     enabled project it launches the configured tool in that directory - inside a Windows
     Terminal window, or VS Code in its own window - then snaps every window into a
     per-monitor grid using TRUE physical pixels (Per-Monitor-DPI-Aware), so geometry
@@ -34,7 +35,7 @@
     With -Init, overwrite an existing config without asking.
 
 .PARAMETER Config
-    Path to a config file. Default: multideck.config.json beside this script.
+    Path to a config file. Default: multideck.config.json at the repo root.
 
 .EXAMPLE
     multideck                      # interactive menu
@@ -260,8 +261,15 @@ function Show-MdMenu {
 }
 
 # ---------------------------------------------------------------- config path
+# This script now lives in scripts/; the config + .bat launchers sit one level up at
+# the repo root. Prefer a config beside the script (override), else use the repo root.
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-if (-not $Config) { $Config = Join-Path $scriptDir "multideck.config.json" }
+$repoRoot  = Split-Path -Parent $scriptDir
+if (-not $repoRoot) { $repoRoot = $scriptDir }
+if (-not $Config) {
+    $beside = Join-Path $scriptDir "multideck.config.json"
+    $Config = if (Test-Path -LiteralPath $beside) { $beside } else { Join-Path $repoRoot "multideck.config.json" }
+}
 
 # ---------------------------------------------------------------- -Init and go
 if ($Init) {
@@ -308,7 +316,7 @@ if (-not $hasDirective -and $script:Interactive) {
 }
 
 # ---------------------------------------------------------------- settings + defaults
-$baseDir     = if ($cfg.baseDir) { Resolve-MdPath "$($cfg.baseDir)" } else { $scriptDir }
+$baseDir     = if ($cfg.baseDir) { Resolve-MdPath "$($cfg.baseDir)" } else { $repoRoot }
 $defaultTool = if ($cfg.settings.defaultTool) { "$($cfg.settings.defaultTool)" } else { "claude" }
 $settle      = if ($null -ne $cfg.settings.settleSeconds) { [int]$cfg.settings.settleSeconds } else { 3 }
 $launchDelay = if ($null -ne $cfg.settings.launchDelayMs) { [int]$cfg.settings.launchDelayMs } else { 400 }
