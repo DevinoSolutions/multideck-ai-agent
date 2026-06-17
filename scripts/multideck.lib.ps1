@@ -26,3 +26,16 @@ function Build-MdSshCommand {
     $remote = if ($Shell) { "$Shell '$inner'" } else { $inner }
     return "ssh -t $SshHost `"$remote`""
 }
+
+# Build the Start-Process cmd ArgumentList for opening VS Code, locally or - when
+# $SshHost is set - over Remote-SSH (code --remote ssh-remote+<host> <dir>).
+function Build-MdCodeArgs {
+    param(
+        [Parameter(Mandatory = $true)][string]$Dir,
+        [string]$SshHost
+    )
+    if ($SshHost) {
+        return @('/c', 'code', '--remote', "ssh-remote+$SshHost", "`"$Dir`"")
+    }
+    return @('/c', 'code', "`"$Dir`"")
+}

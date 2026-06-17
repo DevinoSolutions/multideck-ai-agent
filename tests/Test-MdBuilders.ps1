@@ -27,5 +27,11 @@ Assert-Eq (Build-MdSshCommand -SshHost 'deploy@10.0.0.5' -RemoteDir '/srv/api' -
     'ssh -t deploy@10.0.0.5 "cd /srv/api && codex --yolo"' `
     'ssh command runs raw when shell disabled'
 
+# --- Build-MdCodeArgs ---
+$codeRemote = Build-MdCodeArgs -Dir '/home/ubuntu/work/api' -SshHost 'ubuntu@vm-2'
+Assert-Eq ($codeRemote -join '|') '/c|code|--remote|ssh-remote+ubuntu@vm-2|"/home/ubuntu/work/api"' 'code args include --remote when host set'
+$codeLocal = Build-MdCodeArgs -Dir 'C:\code\docs'
+Assert-Eq ($codeLocal -join '|') '/c|code|"C:\code\docs"' 'code args are local when no host'
+
 if ($script:failures -gt 0) { Write-Host "`n$($script:failures) test(s) failed." -ForegroundColor Red; exit 1 }
 Write-Host "`nAll tests passed." -ForegroundColor Green
