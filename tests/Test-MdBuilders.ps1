@@ -19,6 +19,11 @@ function Assert-Eq($actual, $expected, $name) {
 Assert-Eq (Get-MdRemoteDir ([pscustomobject]@{ path = 'api'; remotePath = '/home/u/api' })) '/home/u/api' 'remoteDir uses remotePath when set'
 Assert-Eq (Get-MdRemoteDir ([pscustomobject]@{ path = '/srv/api' })) '/srv/api' 'remoteDir falls back to path'
 
+# --- Get-MdLeafName (the folder name VS Code shows in its title; tiler matches on it) ---
+Assert-Eq (Get-MdLeafName 'C:/Users/amind/OneDrive/Desktop/Projects/PERSONAL/personal-portfolio') 'personal-portfolio' 'leaf name from forward-slash remote path'
+Assert-Eq (Get-MdLeafName 'C:\code\docs') 'docs' 'leaf name from back-slash local path'
+Assert-Eq (Get-MdLeafName '/srv/app/api/') 'api' 'leaf name ignores trailing slash'
+
 # --- Build-MdSshCommand ---
 Assert-Eq (Build-MdSshCommand -SshHost 'deploy@10.0.0.5' -RemoteDir '/srv/api' -ToolCmd 'claude --continue') `
     'ssh -t deploy@10.0.0.5 "bash -lc ''cd /srv/api && claude --continue''"' `

@@ -391,15 +391,17 @@ foreach ($p in $projects) {
         $remoteDir = Get-MdRemoteDir $p
 
         if ($tool -eq "code") {
-            # VS Code Remote-SSH. Match by the remote folder basename (what VS Code shows).
-            $name    = if ($p.title) { "$($p.title)" } else { Split-Path ("$remoteDir" -replace '/', '\') -Leaf }
-            $running = [WinPos]::FindByTitleContains($name) -ne [IntPtr]::Zero
+            # VS Code Remote-SSH. The window title is the opened folder's basename, so
+            # match on that ($key) regardless of any display 'title' the user set.
+            $key     = Get-MdLeafName $remoteDir
+            $name    = if ($p.title) { "$($p.title)" } else { $key }
+            $running = [WinPos]::FindByTitleContains($key) -ne [IntPtr]::Zero
             if (-not $running -and -not $DryRun) {
                 Start-Process cmd -ArgumentList (Build-MdCodeArgs -Dir $remoteDir -SshHost "$($p.host)") -WindowStyle Hidden
                 Start-Sleep -Milliseconds $launchDelay
             }
             if (-not $running) { $newCount++ }
-            $targets += @{ name = $name; match = "contains"; new = (-not $running) }
+            $targets += @{ name = $name; key = $key; match = "contains"; remoteCode = $true; new = (-not $running) }
             Write-Host ("{0} {1} [code @ ssh-remote+{2}:{3}]" -f $(if ($running) { "OPEN:" } else { "NEW: " }), $name, "$($p.host)", $remoteDir) `
                 -ForegroundColor $(if ($running) { "DarkGray" } else { "Green" })
             continue
@@ -419,7 +421,7 @@ foreach ($p in $projects) {
             Start-Sleep -Milliseconds $launchDelay
         }
         if (-not $running) { $newCount++ }
-        $targets += @{ name = $name; match = "exact"; new = (-not $running) }
+        $targets += @{ name = $name; key = $name; match = "exact"; new = (-not $running) }
         Write-Host ("{0} {1} [{2} @ {3}:{4}]" -f $(if ($running) { "OPEN:" } else { "NEW: " }), $name, $tool, "$($p.host)", $remoteDir) `
             -ForegroundColor $(if ($running) { "DarkGray" } else { "Green" })
         continue
@@ -434,13 +436,16 @@ foreach ($p in $projects) {
     $tool = if ($p.tool) { "$($p.tool)" } else { $defaultTool }
 
     if ($tool -eq "code") {
-        $running = [WinPos]::FindByTitleContains($name) -ne [IntPtr]::Zero
+        # VS Code titles its window by the opened folder's basename - match on that,
+        # not a user 'title' (which it never shows), or tiling silently misses it.
+        $key     = Get-MdLeafName $dir
+        $running = [WinPos]::FindByTitleContains($key) -ne [IntPtr]::Zero
         if (-not $running -and -not $DryRun) {
             Start-Process cmd -ArgumentList "/c", "code", "`"$dir`"" -WindowStyle Hidden
             Start-Sleep -Milliseconds $launchDelay
         }
         if (-not $running) { $newCount++ }
-        $targets += @{ name = $name; match = "contains"; new = (-not $running) }
+        $targets += @{ name = $name; key = $key; match = "contains"; new = (-not $running) }
         Write-Host ("{0} {1} [code]" -f $(if ($running) { "OPEN:" } else { "NEW: " }), $name) `
             -ForegroundColor $(if ($running) { "DarkGray" } else { "Green" })
         continue
@@ -458,7 +463,7 @@ foreach ($p in $projects) {
         Start-Sleep -Milliseconds $launchDelay
     }
     if (-not $running) { $newCount++ }
-    $targets += @{ name = $name; match = "exact"; new = (-not $running) }
+    $targets += @{ name = $name; key = $name; match = "exact"; new = (-not $running) }
     Write-Host ("{0} {1} [{2}]" -f $(if ($running) { "OPEN:" } else { "NEW: " }), $name, $tool) `
         -ForegroundColor $(if ($running) { "DarkGray" } else { "Green" })
 }
@@ -484,8 +489,18 @@ if ($toPlace.Count -eq 0) {
             $slot++; continue
         }
 
-        $hwnd = if ($entry.match -eq "contains") { [WinPos]::FindByTitleContains($entry.name) }
-                else { [WinPos]::FindByTitle($entry.name) }
+        # A freshly-launched window may not exist yet - VS Code Remote-SSH in particular
+        # connects (and on first contact installs its remote server) asynchronously, often
+        # past $settle. Poll a few extra seconds for new windows so they still get tiled.
+        $find  = { if ($entry.match -eq "contains") { [WinPos]::FindByTitleContains($entry.key) } else { [WinPos]::FindByTitle($entry.key) } }
+        $hwnd  = & $find
+        if ($hwnd -eq [IntPtr]::Zero -and $entry.new) {
+            $deadline = if ($entry.remoteCode) { 20 } else { 6 }
+            for ($waited = 0; $waited -lt $deadline -and $hwnd -eq [IntPtr]::Zero; $waited++) {
+                Start-Sleep -Seconds 1
+                $hwnd = & $find
+            }
+        }
 
         if ($hwnd -ne [IntPtr]::Zero) {
             [WinPos]::MoveWindow($hwnd, $pos.x, $pos.y, $pos.w, $pos.h, $true) | Out-Null

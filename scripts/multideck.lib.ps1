@@ -12,6 +12,14 @@ function Get-MdRemoteDir {
     return "$($Project.path)"
 }
 
+# Final path segment of a dir, tolerant of forward- or back-slashes. This is the
+# string VS Code puts in its window title (the opened folder's name), so it - NOT
+# a user-supplied 'title' - is what the tiler must match a 'code' window by.
+function Get-MdLeafName {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    return Split-Path ("$Path" -replace '/', '\').TrimEnd('\') -Leaf
+}
+
 # Build the 'ssh -t <host> "..."' command that runs an agent in a remote dir.
 # With $Shell set (default 'bash -lc') the remote command is wrapped in a login
 # shell so the remote PATH (nvm/asdf/Homebrew/~/.local/bin) is sourced.
